@@ -1,32 +1,31 @@
 from azure.storage.blob import BlobServiceClient
+import os
 
 # Local path to download azure dataset
-AZURE_DEST_FILE = 'local_path/azure.csv'
+AZURE_DEST_FILE = 'C:/Users/jagta/Desktop/downloaded_sales.csv'
 
 class AzureBlobClass(object):
 
-    def __init__(self, connection_str):
+    def __init__(self, connection_str: str, download_path: str):
         self.connection_string = connection_str
+        self.download_path = download_path
 
-    def stream_block_blob(self, name, blob_name):
+    def stream_block_blob(self, container_name, file_name):
         # Instantiate a new BlobServiceClient using a connection string - set chunk size to 1MB
         blob_service_client = BlobServiceClient.from_connection_string(self.connection_string,
                                                                        max_single_get_size=1024*1024,
                                                                        max_chunk_get_size=1024*1024)
 
         # Instantiate a new ContainerClient.
-        container_client = blob_service_client.get_container_client(name)
-
+        container_client = blob_service_client.get_container_client(container_name)
         try:
             # Instantiate a new source blob client
-            blob_client = container_client.get_blob_client(blob_name)
+            blob_client = container_client.get_blob_client(file_name)
 
             # Download Blob
-            with open(AZURE_DEST_FILE, "wb") as my_blob:
+            with open(self.download_path, "wb+") as my_blob:
                 download_stream = blob_client.download_blob()
                 my_blob.write(download_stream.readall())
-
-        finally:
-            # Delete container
-            container_client.delete_container()
+        except Exception as e:
+            print("exception encountered when trying to connect with Azure: {}".format(e))
 
