@@ -2,3 +2,4 @@ venv/
 .idea/
 .constants
 .vscode
+__pycache__

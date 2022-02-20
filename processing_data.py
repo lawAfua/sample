@@ -1,15 +1,38 @@
 import pandas as pd
 import sqlite3
+import requests
+import constants
+import os
+import json
 
 
 class ProcessingData(object):
 
-    def __init__(self, sales_file_path: str, stores_file_path: str):
-        self.sales_file_path = sales_file_path
-        self.stores_file_path = stores_file_path
-        self.sales_df = pd.DataFrame
-        self.stores_df = pd.DataFrame
-        self.final_df = pd.DataFrame
+    def __init__(self):
+        self.dataset = []
+
+    def read_files_and_process(self, folder_path: str):
+        for root, _, files in os.walk(folder_path):
+            for file in files:
+                with open(os.path.join(root, file)) as f:
+                    ids_dict = json.load(f)
+                    self._process_go_ids(ids_dict)
+        return pd.DataFrame(self.dataset)
+
+    def _process_go_ids(self, d: dict):
+        for id in d:
+            url = constants.METADATA_URL + id
+            resp_json = self._fetch_metadata(url)
+            if resp_json["label"] is not None:
+                self.dataset.append([id, resp_json['label']])
+        return
+
+    @staticmethod
+    def _fetch_metadata(url):
+        resp = requests.get(url)
+        if resp.status_code == 200:
+            return resp.json()
+        return "error {}".format(resp), resp.status_code
 
     def read_dataset(self):
         try:
